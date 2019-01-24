@@ -65,10 +65,10 @@ export class ExecutionDetailComponent extends RoutedComponent implements OnInit,
             });
         }));
 
-        this.currentTimeTimer = this._schedulerService.setInterval(this._zone.run(() => {
+        this.currentTimeTimer = this._schedulerService.setInterval(() => {return this._zone.run(() => {
             this.currentTime = new Date().getTime();
             console.log("Updating the current time field");
-        }), 5000);
+        })}, 5000);
     }
 
     ngOnDestroy(): void {

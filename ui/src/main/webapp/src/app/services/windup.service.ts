@@ -76,7 +76,7 @@ export class WindupService extends AbstractService {
         let url = Constants.REST_BASE + this.EXECUTIONS_PATH + '/' + executionID + this.LOGS_PATH;
 
         return this._http.get(url)
-            .map(res => <WindupExecution> res.json())
+            .map(res => res.json())
             .catch(this.handleError);
     }
 

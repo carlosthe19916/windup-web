@@ -2,7 +2,7 @@ var webpack = require('webpack');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var ContextReplacementPlugin = webpack.ContextReplacementPlugin;
-var CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
+// var CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
 var helpers = require('./helpers');
 const path = require('path');
 
@@ -20,37 +20,61 @@ module.exports = {
         extensions: ['.js', '.ts']
     },
 
+    watchOptions: {
+        ignored: /node_modules/
+    },
+
     module: {
-        loaders: [
+        rules: [
             {
                 test: /\.html$/,
-                loader: 'html-loader'
+                use: [{
+                    loader: 'html-loader'
+                }]
             },
             {
                 test: /\.(json|ftl)$/,
                 exclude: /index\.html\.ftl/,
-                loader: 'file-loader?name=[name].[ext]'
+                use: [{
+                    loader: 'file-loader',
+
+                    options: {
+                        name: '[name].[ext]'
+                    }
+                }]
             },
             {
                 test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)$/,
-                loader: 'file-loader?name=assets/[name].[hash].[ext]'
+                use: [{
+                    loader: 'file-loader',
+
+                    options: {
+                        name: 'assets/[name].[hash].[ext]'
+                    }
+                }]
             },
             {
                 test: /\.css$/,
                 exclude: [helpers.root('src', 'app'), helpers.root('node_modules', '@swimlane')],
-                loader: ExtractTextPlugin.extract({ fallback: 'style-loader', loader: ['css-loader?sourceMap'], publicPath: '../' })
+                use: ExtractTextPlugin.extract({ fallback: 'style-loader', use: [{ loader: 'css-loader', options: { sourceMap: true } }], publicPath: '../' })
             },
             {
                 test: /\.scss$/,
                 exclude: /node_modules/,
-                loaders: ['raw-loader', 'sass-loader'] // sass-loader not scss-loader
+                use: [{
+                    loader: 'raw-loader'
+                }, {
+                    loader: 'sass-loader'
+                }] // sass-loader not scss-loader
 //                include: helpers.root('src', 'app'),
 //                loader: 'sass-loader'
             },
             {
                 test: /\.css$/,
                 include: [helpers.root('src', 'app'), helpers.root('node_modules', '@swimlane')],
-                loader: 'raw-loader'
+                use: [{
+                    loader: 'raw-loader'
+                }]
             },
             // All the sh*t for jQuery and other global plugins
             // jQuery needs to be exposed in window.jQuery and window.$ because of plugins dependencies
@@ -58,36 +82,92 @@ module.exports = {
             {
                 test: '/jquery/',
                 exclude: /\.css/,
-                loader: 'expose-loader?$!expose?jQuery'
+                use: [{
+                    loader: 'expose-loader',
+
+                    options: {
+                        $: true
+                    }
+                }, {
+                    loader: 'expose-loader',
+
+                    options: {
+                        jQuery: true
+                    }
+                }]
             },
             // Force those plugins to be loaded into global scope
             // They can load using AMD or CommonJS, but it doesn't work properly
             // They depend on global jQuery variable
             {
                 test: /dataTables*\.js|jquery*\.js|colVis*\.js|colReorder*\.js|jstree\.js/,
-                loader: "imports-loader?define=>false!imports-loader?exports=>false"
+                use: [{
+                    loader: 'imports-loader',
+
+                    options: {
+                        define: '>false'
+                    }
+                }, {
+                    loader: 'imports-loader',
+
+                    options: {
+                        exports: '>false'
+                    }
+                }]
             },
             {
                 test: /jstree\.js/,
-                loader: 'imports-loader?define=>false!imports-loader?exports=>false!imports-loader?module=>false'
+                use: [{
+                    loader: 'imports-loader',
+
+                    options: {
+                        define: '>false'
+                    }
+                }, {
+                    loader: 'imports-loader',
+
+                    options: {
+                        exports: '>false'
+                    }
+                }, {
+                    loader: 'imports-loader',
+
+                    options: {
+                        module: '>false'
+                    }
+                }]
             }
         ]
     },
+    
+    // optimization: {
+    //     splitChunks: {
+    //         cacheGroups: {
+    //             default: false,
+    //             vendor: {
+    //                 chunks: "initial",
+    //                 test: "vendor",
+    //                 name: "vendor",
+    //                 enforce: true
+    //             }
+    //         }
+    //     },
+    // },
 
     plugins: [
         // Cannot be used until this is solved: https://github.com/webpack/webpack/issues/2644
         // new DedupePlugin(),
-        new CommonsChunkPlugin({
-            name: "vendor",
-            minChunks: function(module) {
-                return module.resource &&  (
-                    module.resource.startsWith(nodeModules) || module.resource.startsWith(genDirNodeModules)
-                );
-            },
-            chunks: [
-                "app"
-            ]
-        }),
+        // new CommonsChunkPlugin({
+        //     name: "vendor",
+        //     minChunks: function(module) {
+        //         return module.resource &&  (
+        //             module.resource.startsWith(nodeModules) || module.resource.startsWith(genDirNodeModules)
+        //         );
+        //     },
+        //     chunks: [
+        //         "app"
+        //     ]
+        // }),
         new HtmlWebpackPlugin({
             template: 'text-loader!src/index.html.ftl',
             filename: 'index.html.ftl',

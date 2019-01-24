@@ -174,20 +174,20 @@ export class SourceReportComponent extends RoutedComponent implements OnInit, Af
             return;
 
         // Add the hint nodes to appropriate lines.
-        Prism.hooks.add('after-highlight', function () {
-            let nodeList = document.querySelectorAll('.has-notes .note-placeholder');
-            for (let i = 0; i < nodeList.length; i++) {
-                let placeholder = nodeList.item(i);
-                let idList = placeholder.getAttribute('data-note').split(",");
-                idList.forEach((id) => {
-                    id = id.trim();
-                    let note = document.getElementById(id);
-                    placeholder.appendChild(note);
-                });
-            }
-        });
+        // Prism.hooks.add('after-highlight', function () {
+        //     let nodeList = document.querySelectorAll('.has-notes .note-placeholder');
+        //     for (let i = 0; i < nodeList.length; i++) {
+        //         let placeholder = nodeList.item(i);
+        //         let idList = placeholder.getAttribute('data-note').split(",");
+        //         idList.forEach((id) => {
+        //             id = id.trim();
+        //             let note = document.getElementById(id);
+        //             placeholder.appendChild(note);
+        //         });
+        //     }
+        // });
 
-        Prism.highlightAll(false);
-        this.rendered = true;
+        // Prism.highlightAll(false);
+        // this.rendered = true;
     }
 }

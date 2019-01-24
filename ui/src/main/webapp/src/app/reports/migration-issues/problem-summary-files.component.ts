@@ -97,7 +97,7 @@ export class ProblemSummaryFilesComponent implements OnInit, OnDestroy {
     private delayedPrismRender() {
         const timeout = 60 * 1000;
         // Colorize the included code snippets on the first displaying.
-        this.renderTimeout = this._schedulerService.setTimeout(() => Prism.highlightAll(false), timeout);
+        // this.renderTimeout = this._schedulerService.setTimeout(() => Prism.highlightAll(false), timeout);
     }
 
     renderMarkdownToHtml(markdownCode: string): string {

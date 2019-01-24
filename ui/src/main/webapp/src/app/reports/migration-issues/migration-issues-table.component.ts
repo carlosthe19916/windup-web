@@ -78,7 +78,7 @@ export class MigrationIssuesTableComponent extends FilterableReportComponent imp
 
     private delayedPrismRender() {
         // Colorize the included code snippets on the first displaying.
-        this._schedulerService.setTimeout(() => Prism.highlightAll(false), 1000);
+        // this._schedulerService.setTimeout(() => Prism.highlightAll(false), 1000);
     }
 
     toggleFiles(summary: ProblemSummary) {

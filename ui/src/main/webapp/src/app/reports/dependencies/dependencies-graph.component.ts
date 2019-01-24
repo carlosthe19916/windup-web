@@ -112,7 +112,7 @@ export class DependenciesGraphComponent implements OnInit, OnChanges {
             .force("link", d3.forceLink()
                 .id((d: DependencyNode) => ""+d.id)
                 .strength(0.99)
-                .distance(function(link: d3.SimulationLinkDatum<HasState>, i) {
+                .distance(function(link: d3.SimulationLinkDatum<any>, i) {
                     return (link.source["state"] == "small") ? 1 : 80;
                 })
             )

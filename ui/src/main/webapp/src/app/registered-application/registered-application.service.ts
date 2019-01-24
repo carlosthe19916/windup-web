@@ -77,7 +77,7 @@ export class RegisteredApplicationService extends AbstractService {
         let url = endpoint.replace("{projectId}", project.id.toString()).replace("{exploded}", ""+!!isDirWithExplodedApp);
 
         return this._http.post(url, body, this.JSON_OPTIONS)
-            .map(res => <RegisteredApplication> res.json())
+            .map(res => res.json())
             .catch(this.handleError)
             .do((responseApplication) => {
                 let responseApplicationArray;
@@ -148,7 +148,7 @@ export class RegisteredApplicationService extends AbstractService {
 
                 this._multipartUploader.uploadAll();
 
-                return Observable.fromPromise(promise);
+                return <Observable<RegisteredApplication[]>>Observable.fromPromise(promise);                
             });
     }
 
@@ -240,6 +240,7 @@ export class RegisteredApplicationService extends AbstractService {
             .do(_ => {
                 this._eventBusService.fireEvent(new ApplicationDeletedEvent(project, application, this));
             })
+            .flatMap(() => Observable.empty())
             .catch(this.handleError);
     }
 

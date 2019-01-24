@@ -33,7 +33,7 @@ export class ApplicationDetailsService extends AbstractService {
                 res.traversals = res.traversals.map(traversal => {
                     return this.mapTraversal(res, traversal);
                 });
-                return res;
+                return <any>res;
             })
             .catch(this.handleError);
     }

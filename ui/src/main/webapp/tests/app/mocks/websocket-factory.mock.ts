@@ -9,7 +9,7 @@ export class WebSocketSubjectFactoryMock<T> extends WebSocketSubjectFactory<T> {
         this.subjectStub = subject;
     }
 
-    public createWebSocketSubject(urlConfigOrSource: string | WebSocketSubjectConfig | Observable<T>, destination?: Observer<T>): Subject<T> {
+    public createWebSocketSubject(urlConfigOrSource: string | WebSocketSubjectConfig<T> | Observable<T>, destination?: Observer<T>): Subject<T> {
         return this.subjectStub;
     }
 }

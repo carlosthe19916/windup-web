@@ -15,7 +15,7 @@ export class WebSocketMock<T> implements Subscribable<T>, ISubscription
     closed: boolean;
     subject: Subject<T> = new Subject<T>();
 
-    subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Subscription {
+    subscribe(next?: any, error?: (error: any) => void, complete?: () => void): Subscription {
         return this.subject.subscribe(next, error, complete);
     }
 
