@@ -24,6 +24,7 @@ import {WINDUP_WEB} from "../app.module";
 import {DialogService} from "../shared/dialog/dialog.service";
 import {ConfirmationModalComponent} from "../shared/dialog/confirmation-modal.component";
 import {TreeData} from "../shared/js-tree-angular-wrapper.component";
+import {Path, CardPath, DropdownPath} from "./transformation-paths.component";
 
 @Component({
     templateUrl: './analysis-context-form.component.html',
@@ -51,36 +52,78 @@ export class AnalysisContextFormComponent extends FormComponent
     excludePackages: Package[];
     hideUnfinishedFeatures: boolean = WINDUP_WEB.config.hideUnfinishedFeatures;
 
-    private transformationPaths: MigrationPath[] = [
+    static JBOSS_EAP: number = 102; // Random number    
+
+    static JBOSS_EAP_7: number = 101;
+    static JBOSS_EAP_6: number = 100;
+    static CONTAINERIZATION: number = 90;
+    static LINUX: number = 91; // Random number
+    static OPEN_JDK: number = 92; // Random number
+
+    selectedPaths: Path[];
+    cardPaths: CardPath[] = [
         {
-            "id": 101,
-            "name": "Migration to JBoss EAP 7",
-            "source": null,
-            "target": {
-                "id": 4,
-                "version": 0,
-                "name": "eap",
-                "versionRange": "[7]"
-            }
+            id: AnalysisContextFormComponent.JBOSS_EAP,
+            label: 'Application server migration to EAP',
+            icon: 'pficon pficon-enterprise',
+            children: [
+                {
+                    id: AnalysisContextFormComponent.JBOSS_EAP_7,
+                    label: 'JBoss EAP 7'
+                },
+                {
+                    id: AnalysisContextFormComponent.JBOSS_EAP_6,
+                    label: 'JBoss EAP 6'
+                }
+            ],
         },
         {
-            "id": 100,
-            "name": "Migration to JBoss EAP 6",
-            "source": null,
-            "target": {
-                "id": 3,
-                "version": 0,
-                "name": "eap",
-                "versionRange": "[6]"
-            }
+            id: AnalysisContextFormComponent.CONTAINERIZATION,
+            label: 'Containerization',
+            icon: 'fa fa-cube'
         },
         {
-            "id": 90,
-            "name": "Cloud readiness only",
-            "source": null,
-            "target": null
+            id: AnalysisContextFormComponent.LINUX,
+            label: 'Move to Linux',
+            icon: 'fa fa-linux'
+        },
+        {
+            id: AnalysisContextFormComponent.OPEN_JDK,
+            label: 'OpenJDK',
+            icon: 'fa fa-coffee'
         }
     ];
+
+    // private transformationPaths: MigrationPath[] = [
+    //     {
+    //         "id": 101,
+    //         "name": "Migration to JBoss EAP 7",
+    //         "source": null,
+    //         "target": {
+    //             "id": 4,
+    //             "version": 0,
+    //             "name": "eap",
+    //             "versionRange": "[7]"
+    //         }
+    //     },
+    //     {
+    //         "id": 100,
+    //         "name": "Migration to JBoss EAP 6",
+    //         "source": null,
+    //         "target": {
+    //             "id": 3,
+    //             "version": 0,
+    //             "name": "eap",
+    //             "versionRange": "[6]"
+    //         }
+    //     },
+    //     {
+    //         "id": 90,
+    //         "name": "Cloud readiness only",
+    //         "source": null,
+    //         "target": null
+    //     }
+    // ];
 
     packageTree: Package[] = [];
 
@@ -90,7 +133,7 @@ export class AnalysisContextFormComponent extends FormComponent
 
     private _migrationPathsObservable: Observable<MigrationPath[]>;
 
-    private _transformationPaths: MigrationPath[];
+    // private _transformationPaths: MigrationPath[];
 
     private addCloudTargets: boolean;
     private routerSubscription: Subscription;
@@ -102,7 +145,7 @@ export class AnalysisContextFormComponent extends FormComponent
 
     saveInProgress = false;
 
-    static DEFAULT_MIGRATION_PATH: MigrationPath = <MigrationPath>{ id: 101 };
+    static DEFAULT_MIGRATION_PATH: MigrationPath = <MigrationPath>{ id: AnalysisContextFormComponent.JBOSS_EAP_7 };
     static CLOUD_READINESS_PATH_ID: number = 90;
     @ViewChild('cancelDialog')
     readonly cancelDialog: ConfirmationModalComponent;
@@ -169,6 +212,26 @@ export class AnalysisContextFormComponent extends FormComponent
                                     if (this.isInWizard) {
                                         this.analysisContext.applications = apps.slice();
                                     }
+                                    
+                                    // Load values to card paths
+                                    const selectedPaths: Path[] = [];
+                                    if (this.analysisContext.migrationPath.id == AnalysisContextFormComponent.JBOSS_EAP_6) {
+                                        selectedPaths.push({ id: AnalysisContextFormComponent.JBOSS_EAP_6 });
+                                    }
+                                    if (this.analysisContext.migrationPath.id == AnalysisContextFormComponent.JBOSS_EAP_7) {
+                                        selectedPaths.push({ id: AnalysisContextFormComponent.JBOSS_EAP_7 });
+                                    }
+                                    if (this.analysisContext.cloudTargetsIncluded) {
+                                        selectedPaths.push({ id: AnalysisContextFormComponent.CONTAINERIZATION });
+                                    }
+                                    if (this.analysisContext.linuxTargetsIncluded) {
+                                        selectedPaths.push({ id: AnalysisContextFormComponent.LINUX });
+                                    }
+                                    if (this.analysisContext.openJdkTargetsIncluded) {
+                                        selectedPaths.push({ id: AnalysisContextFormComponent.OPEN_JDK });
+                                    }
+                                    this.selectedPaths = selectedPaths;
+
                                 });
                         }
                         this.loadPackageMetadata();
@@ -428,12 +491,33 @@ export class AnalysisContextFormComponent extends FormComponent
     }
 
     onMigrationPathChange() {
-        if (this.analysisContext.migrationPath.id === AnalysisContextFormComponent.CLOUD_READINESS_PATH_ID) {
-            this.analysisContext.cloudTargetsIncluded = true;
-            this.disableCloudReadiness = true;
-        } else {
-            this.disableCloudReadiness = false;
+        if (this.selectedPaths && this.selectedPaths.length > 0) {
+            const eap6Index = this.indexOfPathId(this.selectedPaths, AnalysisContextFormComponent.JBOSS_EAP_6);
+            const eap7Index = this.indexOfPathId(this.selectedPaths, AnalysisContextFormComponent.JBOSS_EAP_7)
+            const containerizationIndex = this.indexOfPathId(this.selectedPaths, AnalysisContextFormComponent.CONTAINERIZATION)
+            const linuxIndex = this.indexOfPathId(this.selectedPaths, AnalysisContextFormComponent.LINUX)
+            const openJdkIndex = this.indexOfPathId(this.selectedPaths, AnalysisContextFormComponent.OPEN_JDK)
+
+            if (eap6Index != -1 || eap7Index != -1) {
+                this.analysisContext.migrationPath.id = this.selectedPaths[eap6Index != -1 ? eap6Index : eap7Index].id;
+            } else {
+                this.analysisContext.migrationPath.id = AnalysisContextFormComponent.CLOUD_READINESS_PATH_ID;
+            }
+
+            this.analysisContext.cloudTargetsIncluded = containerizationIndex != -1;
+            this.analysisContext.linuxTargetsIncluded = linuxIndex != -1;
+            this.analysisContext.openJdkTargetsIncluded = openJdkIndex != -1;
         }
+    }
+
+    private indexOfPathId(paths: Path[], id: number): number {
+        for (let index = 0; index < paths.length; index++) {
+            const path = paths[index];
+            if (path.id == id) {
+                return index;
+            }
+        }
+        return -1;
     }
 }
 
@@ -441,4 +525,3 @@ enum Action {
     Save = 0,
     SaveAndRun = 1
 }
-

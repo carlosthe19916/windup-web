@@ -15,7 +15,7 @@
         <div class="blank-slate-pf-main-action">
             <p>There are no applications in this project. You must add an application before configuring the analysis.</p>
             <a [routerLink]="['/projects', project.id, 'applications', 'register']" class="clickable btn btn-primary btn-lg" i18n="no application page Button">
-            Add Application
+                Add Application
             </a>
         </div>
     </div>
@@ -32,13 +32,26 @@
 
         <!-- Fixed Transformation paths -->
         <div class="form-group">
-            <label class="control-label required" for="migrationPath" i18n>Transformation path</label>
+            <label class="control-label required" i18n>Transformation path</label>
+
+            <p class="help-block" i18n="transform path description">Select one or several transformation options in focus for the analysis.</p>
+            <!-- <div class="container-fluid container-cards-pf">-->
             <div>
+                <wu-transformation-paths id="selectedPaths"
+                    name="selectedPaths"
+                    [cardPaths]="cardPaths"
+                    [(ngModel)]="selectedPaths"
+                    (ngModelChange)="onMigrationPathChange()"
+                    required>
+                </wu-transformation-paths>
+            </div>
+            
+            <!-- <div>
                 <ng-container *ngFor="let transformationPath of transformationPaths">
                     <label class="radio-inline control-label" style="padding-left: 20px; padding-right: 40px;">
                         <input type="radio" id="migrationPath" name="migrationPath" #migrationPath="ngModel"
-                            [(ngModel)]="analysisContext.migrationPath.id" ngControl="migrationPath" [value]="transformationPath.id"
-                            (ngModelChange)="onMigrationPathChange()"
+                               [(ngModel)]="analysisContext.migrationPath.id" ngControl="migrationPath" [value]="transformationPath.id"
+                               (ngModelChange)="onMigrationPathChange()"
                         />
                         {{ transformationPath.name }}
                     </label>
@@ -47,10 +60,10 @@
             </div>
             <label class="checkbox-inline">
                 <input type="checkbox" name="cloudTargetsIncluded" ngControl="cloudTargetsIncluded" [(ngModel)]="analysisContext.cloudTargetsIncluded"
-                    [disabled]="disableCloudReadiness" />
+                       [disabled]="disableCloudReadiness" />
                 Cloud readiness analysis
             </label>
-            <p class="help-block" i18n="cloud readiness description">Check this box to also assess your applications for cloud and container readiness.</p>
+            <p class="help-block" i18n="cloud readiness description">Check this box to also assess your applications for cloud and container readiness.</p> -->
         </div>
 
         <!-- Advanced Transformation paths
