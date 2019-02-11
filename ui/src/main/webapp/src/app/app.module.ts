@@ -5,11 +5,10 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {DatePipe} from "@angular/common";
 
 import {AppComponent} from "./components/app.component";
-import {appRoutingProviders, routing} from "./app.routing";
+import {AppRoutingModule} from "./app-routing.module";
 
 import {MomentModule} from "angular2-moment";
 import {FileUploader, FileUploadModule} from "ng2-file-upload";
-import {SlimLoadingBarModule} from "ng2-slim-loading-bar";
 
 import {InViewport} from "./components/in-viewport.directive";
 
@@ -47,7 +46,7 @@ initializeModelMappingData();
         BrowserModule,
         FormsModule,
         ReactiveFormsModule,
-        routing,
+        AppRoutingModule,
 
         FileUploadModule,
 
@@ -61,7 +60,6 @@ initializeModelMappingData();
         ConfigurationModule,
         AnalysisContextModule,
         ExecutionsModule,
-        SlimLoadingBarModule.forRoot(),
     ],
     declarations: [
         // Directives
@@ -74,7 +72,6 @@ initializeModelMappingData();
         AboutPageComponent
     ],
     providers: [
-        appRoutingProviders,
         ClassificationService,
         FileModelService,
         FileService,

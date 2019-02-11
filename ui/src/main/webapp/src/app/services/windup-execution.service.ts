@@ -55,8 +55,7 @@ export class WindupExecutionService extends AbstractService {
 
     public watchExecutionUpdates(execution: WindupExecution, project: MigrationProject) {
         const url = WindupExecutionService.EXECUTION_PROGRESS_URL
-            .replace('https', 'wss')
-            .replace('http', 'ws')
+            .replace(/^http/, 'ws')
             .replace('{executionId}', execution.id.toString());
 
         if (!this.executionSocket.has(execution.id)) {
@@ -125,5 +124,12 @@ export class WindupExecutionService extends AbstractService {
      */
     public static formatStaticReportUrl(execution: WindupExecution): string {
         return Constants.STATIC_REPORTS_BASE + "/" + execution.applicationListRelativePath;
+    }
+
+    /**
+     * @returns {string} An URL to the static rule provider report of the given execution.
+     */
+    public static formatStaticRuleProviderReportUrl(execution: WindupExecution): string {
+        return Constants.STATIC_REPORTS_BASE + "/" + execution.ruleProvidersExecutionOverviewRelativePath;
     }
 }

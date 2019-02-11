@@ -59,6 +59,10 @@ public class WindupExecution implements Serializable
     @JsonIgnore
     private MigrationProject project;
 
+    @Column(name = "time_queued")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Calendar timeQueued;
+
     @Column(name = "time_started")
     @Temporal(TemporalType.TIMESTAMP)
     private Calendar timeStarted;
@@ -76,7 +80,7 @@ public class WindupExecution implements Serializable
     @Column(name = "work_completed")
     private int workCompleted;
 
-    @Column(name = "current_task")
+    @Column(name = "current_task", length = 1024)
     private String currentTask;
 
     @Column(name = "last_modified")
@@ -198,6 +202,42 @@ public class WindupExecution implements Serializable
     public void setApplicationListRelativePath(String path)
     {
         // nooop
+    }
+
+    /**
+     * Gets the relative path to the rule providers report in a format suitable for a URL.
+     */
+    public String getRuleProvidersExecutionOverviewRelativePath()
+    {
+        String directoryName = getOutputDirectoryName();
+        if (directoryName == null)
+            return null;
+
+        return directoryName + "/reports/windup_ruleproviders.html";
+    }
+
+    /**
+     * This should never be called directory (it is only here to aid in Jackson serialization).
+     */
+    public void setRuleProvidersExecutionOverviewRelativePath(String path)
+    {
+        // nooop
+    }
+
+    /**
+     * Contains the time at which this analysis was put into the analysis queue.
+     */
+    public Calendar getTimeQueued()
+    {
+        return timeQueued;
+    }
+
+    /**
+     * Contains the time at which this analysis was put into the analysis queue.
+     */
+    public void setTimeQueued(Calendar timeQueued)
+    {
+        this.timeQueued = timeQueued;
     }
 
     /**

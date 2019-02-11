@@ -89,7 +89,11 @@
                     <ng-container i18n>Identifying packages...</ng-container>
                 </p>
             </div>
-            <wu-js-tree-wrapper style="max-height: 240px;" [treeNodes]="packageTree" [(selectedNodes)]="analysisContext.includePackages">
+            <wu-js-tree-wrapper
+                    style="max-height: 240px;"
+                    [treeNodes]="packageTree"
+                    [(selectedNodes)]="analysisContext.includePackages"
+                    (selectedNodesChange)="includedPackagesChanged($event)">
             </wu-js-tree-wrapper>
             <p class="help-block" i18n="include packages description">Select the Java packages to decompile and analyze. If no packages are selected, all will be analyzed.</p>
         </div>
@@ -104,7 +108,11 @@
                             <ng-container i18n>Identifying packages...</ng-container>
                         </p>
                     </div>
-                    <wu-js-tree-wrapper style="max-height: 240px;" [treeNodes]="packageTree" [(selectedNodes)]="analysisContext.excludePackages">
+                    <wu-js-tree-wrapper
+                            style="max-height: 240px;"
+                            [treeNodes]="packageTree"
+                            [(selectedNodes)]="analysisContext.excludePackages"
+                            (selectedNodesChange)="excludedPackagesChanged($event)">
                     </wu-js-tree-wrapper>
                 </div>
                 <p class="help-block" i18n="exclude packages description">All classes in the selected packages will be ignored during analysis.</p>
@@ -120,7 +128,7 @@
                         (selectedRulePathsChanged)="rulesPathsChanged($event)">
                 </wu-custom-rule-selection>
                 <p class="help-block">
-                    Adding a ruleset is possible on <a href='configuration'>Rules Configuration</a>.
+                    Adding a ruleset is possible on <a [routerLink]="['/configuration']">Rules Configuration</a>.
                 </p>
             </div>
         </wu-expand-collapse>
@@ -147,7 +155,8 @@
             <button (click)="cancel()" class="btn btn-default" type="button" i18n>
                 {{isInWizard ? 'Back' : 'Cancel'}}
             </button>
-            <button (click)="save()" class="btn btn-primary btn-save" [disabled]="!analysisContextForm.form.valid || saveInProgress" i18n>
+            <button (click)="save()" class="btn btn-primary btn-save"
+                    [disabled]="!analysisContextForm.form.valid || analysisContext.applications.length === 0 || saveInProgress" i18n>
                 <span *ngIf="saveInProgress && action === 0" class="spinner spinner-xs spinner-inline"></span>
                 Save
             </button>
@@ -158,4 +167,7 @@
             </button>
         </div>
     </form>
+
+    <wu-confirmation-modal #confirmDialog [id]="'confirmDialog'"></wu-confirmation-modal>
+    <wu-confirmation-modal #cancelDialog [id]="'cancelDialog'"></wu-confirmation-modal>
 </div>

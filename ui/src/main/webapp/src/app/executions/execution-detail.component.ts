@@ -41,33 +41,31 @@ export class ExecutionDetailComponent extends RoutedComponent implements OnInit,
         super(_router, _activatedRoute, _routeFlattener);
     }
 
-    initialize(): void {
-        this.subscriptions.push(this.flatRouteLoaded.subscribe(flatRouteData => this.loadData(flatRouteData)));
-    }
-
-    loadData(flatRouteData) {
-        let executionId = +flatRouteData.params.executionId;
-
-        this._eventBus.onEvent
-            .filter(event => event.isTypeOf(ExecutionEvent))
-            .filter((event: ExecutionEvent) => event.execution.id === executionId)
-            .subscribe((event: ExecutionEvent) => {
-                this.execution = event.execution;
-                this.loadLogData();
-            });
-
-        this._windupService.getExecution(executionId).subscribe(execution => {
-            this.execution = execution;
-            this.loadLogData();
-            this._ruleProviderExecutionsService.getPhases(executionId)
-                .subscribe(phases => {
-                    this.phases = phases;
-                });
-        });
-    }
-
     ngOnInit(): void {
-        this.currentTimeTimer = this._schedulerService.setInterval(() => this._zone.run(() => {
+        this.subscriptions.push(this.flatRouteLoaded.subscribe(flatRouteData => {
+            let executionId = +flatRouteData.params.executionId;
+
+            this._eventBus.onEvent
+                .filter(event => event.isTypeOf(ExecutionEvent))
+                .filter((event: ExecutionEvent) => event.execution.id === executionId)
+                .subscribe((event: ExecutionEvent) => {
+                    this.execution = event.execution;
+                    this.loadLogData();
+                });
+
+            this._windupService.getExecution(executionId).subscribe(execution => {
+                this.execution = execution;
+                this.loadLogData();
+                this._ruleProviderExecutionsService.getPhases(executionId)
+                    .subscribe(phases => {
+                        this.phases = phases;
+                    }, error => {
+                        this.phases = [];
+                    });
+            });
+        }));
+
+        this.currentTimeTimer = this._schedulerService.setInterval(this._zone.run(() => {
             this.currentTime = new Date().getTime();
             console.log("Updating the current time field");
         }), 5000);
@@ -90,6 +88,10 @@ export class ExecutionDetailComponent extends RoutedComponent implements OnInit,
 
     formatStaticReportUrl(execution: WindupExecution): string {
         return WindupExecutionService.formatStaticReportUrl(execution);
+    }
+
+    formatStaticRuleProviderReportUrl(execution: WindupExecution): string {
+        return WindupExecutionService.formatStaticRuleProviderReportUrl(execution);
     }
 
     private loadLogData() {

@@ -51,6 +51,7 @@ public class MessagingProgressMonitor implements WindupProgressMonitor
 
         if (execution.getState() == ExecutionState.QUEUED)
         {
+            execution.setTimeStarted(new GregorianCalendar());
             execution.setState(ExecutionState.STARTED);
         }
 
@@ -63,7 +64,9 @@ public class MessagingProgressMonitor implements WindupProgressMonitor
         {
             lastSendTime = System.currentTimeMillis();
 
-            jmsService.getServiceAdapter().sendStatusUpdate(this.projectID, execution);
+            // The final completion update is sent separately from this (via sendReportData), so don't send it here.
+            if (execution.getState() != ExecutionState.COMPLETED)
+                jmsService.getServiceAdapter().sendStatusUpdate(this.projectID, execution);
         }
         catch (Exception e)
         {
@@ -115,6 +118,7 @@ public class MessagingProgressMonitor implements WindupProgressMonitor
     @Override
     public void setTaskName(String name)
     {
+        if (name.length() > 1024) name = name.substring(0, 1024);
         execution.setCurrentTask(name);
         sendUpdate(execution);
 

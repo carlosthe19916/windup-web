@@ -46,7 +46,7 @@
                                 </dd>  <!-- This will show $MAVEN_TOKEN{project.version} during development, but work from a .war. -->
                             </dl>
                             <p>
-                                The <a target="_blank" href="https://access.redhat.com/documentation/en/red-hat-application-migration-toolkit/">documentation</a>
+                                The <a target="_blank" href="https://access.redhat.com/documentation/en-us/red_hat_application_migration_toolkit/">documentation</a>
                                 contains information to help you learn about Red Hat Application Migration Toolkit
                                 and start exploring its features.
                                 From migrating your first application to creating your own rules, it provides what you need to set up and use Red Hat Application Migration Toolkit.
@@ -56,13 +56,13 @@
 
                             <dl class="dl-horizontal">
                                 <dt>Follow on Twitter</dt>
-                                <dd><a target="_blank" href="http://twitter.com/jbosswindup">@JBossWindup</a></dd>
+                                <dd><a target="_blank" href="https://twitter.com/jbosswindup">@JBossWindup</a></dd>
 
                                 <dt>Website</dt>
                                 <dd><a target="_blank" href="https://developers.redhat.com/products/rhamt/overview/">https://developers.redhat.com/products/rhamt/overview/</a></dd>
 
                                 <dt>Documentation</dt>
-                                <dd><a target="_blank" href="https://access.redhat.com/documentation/en/red-hat-application-migration-toolkit/">https://access.redhat.com/documentation/en/red-hat-application-migration-toolkit/</a></dd>
+                                <dd><a target="_blank" href="https://access.redhat.com/documentation/en-us/red_hat_application_migration_toolkit/">https://access.redhat.com/documentation/en-us/red_hat_application_migration_toolkit/</a></dd>
                             </dl>
 
                             <dl class="dl-horizontal">
@@ -81,21 +81,6 @@
                                 <dt>Issue Tracking</dt>
                                 <dd><a target="_blank" href="https://issues.jboss.org/browse/WINDUP">https://issues.jboss.org/browse/WINDUP</a></dd>
                             </dl>
-
-
-                            <h2>Contributors</h2>
-
-                            <p class="windup-contributors small">A special <strong>thanks</strong> to our contributors!</p>
-
-                            <div id="windup-contributors">
-                                <p *ngIf="!contributors" i18n="GitHub contributors">Loading...</p>
-                                <a *ngFor="let cont of contributors" data-toggle='tooltip' title="{{cont.login}}" href="{{cont.html_url}}">
-                                    <img class='windupContributor' src="{{cont.avatar_url}}"/>
-                                </a>
-                            </div>
-                            <script type="text/javascript">
-                                $('[data-toggle="tooltip"]').tooltip({'placement': 'top'});
-                            </script>
                         </div>
                     </div>
 

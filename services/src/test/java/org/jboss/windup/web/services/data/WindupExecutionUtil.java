@@ -4,6 +4,8 @@ import java.io.InputStream;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import org.jboss.windup.config.KeepWorkDirsOption;
+import org.jboss.windup.web.services.model.AdvancedOption;
 import org.jboss.windup.web.services.model.AnalysisContext;
 import org.jboss.windup.web.services.model.ExecutionState;
 import org.jboss.windup.web.services.model.MigrationProject;
@@ -46,13 +48,15 @@ public class WindupExecutionUtil
 
             // Refresh it, as adding the app may have caused changes
             context = this.analysisContextEndpoint.get(context.getId());
+            context.addAdvancedOption(new AdvancedOption(KeepWorkDirsOption.NAME, "true"));
 
-            this.analysisContextEndpoint.saveAsProjectDefault(context, project.getId());
+            context = this.analysisContextEndpoint.saveAsProjectDefault(context, project.getId());
         }
 
         System.out.println("Setup Graph test, registered application and ready to start Windup analysis...");
 
         WindupExecution initialExecution = this.windupEndpoint.executeProjectWithContext(context, project.getId());
+        System.out.println("Execution for project: " + project.getId() + " output: " + initialExecution.getOutputPath());
 
         WindupExecution status = this.windupEndpoint.getExecution(initialExecution.getId());
         long beginTime = System.currentTimeMillis();

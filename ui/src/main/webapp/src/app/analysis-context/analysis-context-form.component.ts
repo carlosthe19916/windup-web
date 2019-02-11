@@ -23,6 +23,7 @@ import {forkJoin} from "rxjs/observable/forkJoin";
 import {WINDUP_WEB} from "../app.module";
 import {DialogService} from "../shared/dialog/dialog.service";
 import {ConfirmationModalComponent} from "../shared/dialog/confirmation-modal.component";
+import {TreeData} from "../shared/js-tree-angular-wrapper.component";
 
 @Component({
     templateUrl: './analysis-context-form.component.html',
@@ -103,9 +104,10 @@ export class AnalysisContextFormComponent extends FormComponent
 
     static DEFAULT_MIGRATION_PATH: MigrationPath = <MigrationPath>{ id: 101 };
     static CLOUD_READINESS_PATH_ID: number = 90;
-
-    private dialog: ConfirmationModalComponent;
-    private dialogSubscription: Subscription;
+    @ViewChild('cancelDialog')
+    readonly cancelDialog: ConfirmationModalComponent;
+    @ViewChild('confirmDialog')
+    readonly confirmDialog: ConfirmationModalComponent;
 
     private flatRouteData: FlattenedRouteData;
 
@@ -123,21 +125,25 @@ export class AnalysisContextFormComponent extends FormComponent
                 private _notificationService: NotificationService,
                 private _registeredApplicationService: RegisteredApplicationService,
                 private _dialogService: DialogService
-            ) {
+    ) {
         super();
         this.includePackages = [];
         this.excludePackages = [];
 
         this.initializeAnalysisContext();
 
-        this.dialog  = this._dialogService.getConfirmationDialog();
-        this.dialogSubscription = this.dialog.confirmed.subscribe(() => this.saveConfiguration());
 
-        this.initialize();
     }
 
-    initialize() {
-        this.routerSubscription = this._routeFlattener.OnFlatRouteLoaded.subscribe(flatRouteData => {
+    ngOnInit() {
+        this.saveInProgress = false;
+
+        this._configurationOptionsService.getAll().subscribe((options: ConfigurationOption[]) => {
+            this.configurationOptions = options;
+        });
+
+        this.routerSubscription = this._router.events.filter(event => event instanceof NavigationEnd).subscribe(_ => {
+            let flatRouteData = this._routeFlattener.getFlattenedRouteData(this._activatedRoute.snapshot);
             this.flatRouteData = flatRouteData;
 
             if (flatRouteData.data['project']) {
@@ -172,23 +178,21 @@ export class AnalysisContextFormComponent extends FormComponent
 
             this.isInWizard = flatRouteData.data.hasOwnProperty('wizard') && flatRouteData.data['wizard'];
         });
-    }
 
-    loadData(flatRouteData) {
-
-    }
-
-    ngOnInit() {
-        this.saveInProgress = false;
-
-        this._configurationOptionsService.getAll().subscribe((options: ConfigurationOption[]) => {
-            this.configurationOptions = options;
+        this.cancelDialog.confirmed.subscribe(() => {
+            this.cleanseAfterDialogConfirm();
         });
+
+        this.confirmDialog.confirmed.subscribe(() => {
+            this.saveConfiguration();
+        });
+
     }
 
     ngOnDestroy(): void {
         this.routerSubscription.unsubscribe();
-        this.dialogSubscription.unsubscribe();
+        this.cancelDialog.confirmed.unsubscribe();
+        this.confirmDialog.confirmed.unsubscribe();
     }
 
     // Apps selection checkboxes
@@ -309,11 +313,21 @@ export class AnalysisContextFormComponent extends FormComponent
         this._dirty = true;
     }
 
+    includedPackagesChanged(selectedNodes: Package[]) {
+        this.analysisContext.includePackages = selectedNodes;
+        this.includePackages = selectedNodes;
+    }
+
+    excludedPackagesChanged(selectedNodes: Package[]) {
+        this.analysisContext.excludePackages = selectedNodes;
+        this.excludePackages = selectedNodes;
+    }
+
     onSubmit() {
         if (!this.packageTreeLoaded) {
-            this.dialog.title = 'Package identification is not complete';
-            this.dialog.body = `Do you want to save the analysis without selecting packages?`;
-            this.dialog.show();
+            this.confirmDialog.title = 'Package identification is not complete';
+            this.confirmDialog.body = `Do you want to save the analysis without selecting packages?`;
+            this.confirmDialog.show();
         } else {
             this.saveConfiguration();
         }
@@ -339,17 +353,22 @@ export class AnalysisContextFormComponent extends FormComponent
     }
 
     onSuccess(analysisContext: AnalysisContext) {
+
         this.analysisContext = analysisContext; // update context
+
+        for (let node of this.analysisContext.includePackages) {
+            console.log(node.fullName);
+        }
 
         if (this.action === Action.SaveAndRun) {
             this._windupExecutionService.execute(analysisContext, this.project)
                 .subscribe(execution => {
-                    this.saveInProgress = false;
-                    this._router.navigate([`/projects/${this.project.id}`]);
-                },
-                error => {
-                    this._notificationService.error(utils.getErrorMessage(error));
-                });
+                        this.saveInProgress = false;
+                        this._router.navigate([`/projects/${this.project.id}`]);
+                    },
+                    error => {
+                        this._notificationService.error(utils.getErrorMessage(error));
+                    });
         } else if (this.isInWizard) {
             this.saveInProgress = false;
             this._router.navigate([`/projects/${this.project.id}`]);
@@ -392,6 +411,13 @@ export class AnalysisContextFormComponent extends FormComponent
         let projectPageRoute = `/projects/${this.project.id}`;
         this._routeHistoryService.navigateBackOrToRoute(projectPageRoute);
     }
+
+    cleanseAfterDialogConfirm()
+    {
+        this._dirty = false;
+    }
+
+
 
     rulesPathsChanged(rulesPaths: RulesPath[]) {
         this.analysisContext.rulesPaths = rulesPaths;

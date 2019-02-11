@@ -2,6 +2,7 @@ package org.jboss.windup.web.addons.websupport.services;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.jboss.windup.graph.GraphContextFactory;
 import org.jboss.windup.rules.apps.java.config.ExcludePackagesOption;
 import org.jboss.windup.rules.apps.java.config.ScanPackagesOption;
 import org.jboss.windup.util.exception.WindupException;
+import org.jboss.windup.web.addons.websupport.WebPathUtil;
 import org.jboss.windup.web.addons.websupport.rest.graph.GraphCache;
 
 /**
@@ -42,12 +44,15 @@ public class WindupExecutorServiceImpl implements WindupExecutorService
     @Inject
     private GraphCache graphCache;
 
+    @Inject
+    private WebPathUtil webPathUtil;
+
     @Override
     public void execute(WindupProgressMonitor progressMonitor, Collection<Path> rulesPaths, List<Path> inputPaths, Path outputPath,
                 List<String> packages,
                 List<String> excludePackages, String source, List<String> targets, Map<String, Object> otherOptions, boolean generateStaticReports)
     {
-        Path graphPath = outputPath.resolve(GraphContextFactory.DEFAULT_GRAPH_SUBDIRECTORY);
+        Path graphPath = webPathUtil.createWindupGraphOutputPath(outputPath);
         // Close it here, since we will be deleting the old one and rewriting
         graphCache.closeGraph(graphPath);
 
@@ -79,18 +84,34 @@ public class WindupExecutorServiceImpl implements WindupExecutorService
         if (source != null)
             configuration.setOptionValue(SourceOption.NAME, Collections.singletonList(source));
 
-        if (targets != null && targets.size() > 0) {
+        if (targets != null && targets.size() > 0)
+        {
             configuration.setOptionValue(TargetOption.NAME, targets);
         }
 
         configuration.setOptionValue(OverwriteOption.NAME, true);
-        configuration.setOptionValue(KeepWorkDirsOption.NAME, true);
+        configuration.setOptionValue(KeepWorkDirsOption.NAME, false);
 
         for (Map.Entry<String, Object> optionEntry : otherOptions.entrySet())
         {
-            configuration.setOptionValue(optionEntry.getKey(), optionEntry.getValue());
+            Object existingOption = configuration.getOptionValue(optionEntry.getKey());
+            if (existingOption instanceof Collection)
+            {
+                List newOption = new ArrayList();
+                newOption.addAll((Collection) existingOption);
+
+                if (optionEntry.getValue() instanceof Collection)
+                    newOption.addAll((Collection)optionEntry.getValue());
+                else
+                    newOption.add(optionEntry.getValue());
+                configuration.setOptionValue(optionEntry.getKey(), newOption);
+            }
+            else
+            {
+                configuration.setOptionValue(optionEntry.getKey(), optionEntry.getValue());
+            }
         }
-        
+
         Logger globalLogger = Logger.getLogger("org.jboss.windup.web.messaging.executor.MessagingProgressMonitor");
         Handler logHandler = null;
         try
@@ -106,6 +127,11 @@ public class WindupExecutorServiceImpl implements WindupExecutorService
             globalLogger.addHandler(logHandler);
 
             processor.execute(configuration);
+        }
+        catch (Exception ex)
+        {
+            progressMonitor.setTaskName("Exception during processing - " + ex.getMessage());
+            throw ex;
         }
         finally
         {

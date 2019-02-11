@@ -1,5 +1,7 @@
 package org.jboss.windup.web.messaging.executor;
 
+import org.jboss.windup.rules.apps.java.scan.operation.UnzipArchiveToOutputFolder;
+import org.jboss.windup.util.TarUtil;
 import org.jboss.windup.web.services.json.WindupExecutionJSONUtil;
 import org.jboss.windup.web.services.model.WindupExecution;
 
@@ -8,6 +10,11 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  * Provides baseline functionality for serializing and deserializing {@link WindupExecution}
@@ -17,6 +24,9 @@ import java.io.IOException;
  */
 public abstract class AbstractSerializer implements ExecutionSerializer
 {
+    private static Logger LOG = Logger.getLogger(AbstractSerializer.class.getName());
+    public final static String FULL_TAR_ARCHIVE = "FULL_TAR_ARCHIVE";
+
     @Override
     public Message serializeExecutionRequest(JMSContext context, WindupExecution execution)
     {
@@ -92,6 +102,30 @@ public abstract class AbstractSerializer implements ExecutionSerializer
         catch (Exception e)
         {
             throw new RuntimeException("Error deserializing message due to: " + e.getMessage(), e);
+        }
+    }
+
+    Path createResultArchive(Long projectID, WindupExecution execution, Path outputDirectory)
+    {
+        try
+        {
+            Files.createDirectories(outputDirectory);
+            Path tempFile = outputDirectory.resolve("report_files.tar");
+            boolean fullTarArchive = Boolean.valueOf(System.getenv(FULL_TAR_ARCHIVE));
+            if (fullTarArchive)
+            {
+                LOG.info("Required full archive creation");
+                TarUtil.tarDirectory(tempFile, Paths.get(execution.getOutputPath()));
+            }
+            else
+            {
+                TarUtil.tarDirectory(tempFile, Paths.get(execution.getOutputPath()), Arrays.asList(UnzipArchiveToOutputFolder.ARCHIVES));
+            }
+            return tempFile;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Failed to create result archive due to: " + e.getMessage(), e);
         }
     }
 }
