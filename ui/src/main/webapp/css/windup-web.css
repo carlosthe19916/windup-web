@@ -236,11 +236,11 @@ fieldset.fields-section-pf {
 
 /* Checkbox background color*/
 .mat-checkbox-checked.mat-accent .mat-checkbox-background, .mat-checkbox-indeterminate.mat-accent .mat-checkbox-background {
-    background-color: #dddddd !important;
+    background-color: transparent !important;
 }
 
 .mat-checkbox-inner-container {
-    background: #dddddd;
+    background: transparent !important;
 }
 
 /** Checkbox check animation */
@@ -250,17 +250,17 @@ fieldset.fields-section-pf {
 
 /* Checkbox check color*/
 .mat-checkbox-checkmark-path {
-    stroke: #292e34 !important;
+    stroke: #002235 !important;
     stroke-width: 4.13333px !important;
 }
 
 /* Undeterminate checkbox color*/
 .mat-checkbox-mixedmark {
-    background-color: #292e34 !important;
+    background-color: #002235 !important;
 }
 
 /* Checkbox border color */
 .mat-checkbox-frame {
-    border-color: rgb(166, 166, 166) !important;
-    border-width: 1px !important;
+    border-color: #39a5dc !important;
+    border-width: 2px !important;
 }
