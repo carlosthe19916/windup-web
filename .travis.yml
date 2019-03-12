@@ -12,9 +12,6 @@ env:
 
 cache:
   yarn: true
-#  directories:
-#    - $HOME/.m2
-#    - $HOME/.cache/yarn
 
 before_install:
   - nvm install $NODE_VERSION
@@ -31,15 +28,14 @@ script:
   - mvn clean install -DskipTests >> build.log 2>&1
 after_success:
   - tail --lines=2000 build.log
-  - ".travis/install_web_distribution.sh"
 after_failure:
   - tail --lines=2000 build.log
 
 before_deploy:
-  - ".travis/install_openshift_distribution.sh"
+  - ".travis/build_docker_images.sh"
 deploy:
   provider: script
-  script: .travis/deploy.sh
+  script: ".travis/deploy.sh"
   on:
     all_branches: true
 
