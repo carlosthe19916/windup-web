@@ -20,7 +20,7 @@ tail --lines=50 windup_web_distribution.log
 
 
 # Install windup-docker
-git clone --branch="${DEFAULT_BRANCH}" "https://github.com/${GIT_ORGANIZATION}/windup-docker.git" "${HOME}/dependencies/windup-docker"
+git clone --branch="${DEFAULT_BRANCH}" "https://github.com/carlosthe19916/windup-docker.git" "${HOME}/dependencies/windup-docker"
 
 mvn -f ${HOME}/dependencies/windup-docker/pom.xml clean install -DskipTests \
 -Ddocker.name.windup.web=${DOCKER_ID}/windup-web \
