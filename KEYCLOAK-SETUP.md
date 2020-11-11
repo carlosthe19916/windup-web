@@ -1,5 +1,6 @@
 # Manual steps to install Keycloak (or Red Hat SSO) on development server
 
+
 > Note: (not recommended for a production usage)
 
 There are two options - install Red Hat SSO 7 as a standalone server, or Keycloak community as an overlay applied to WildFly 10 or EAP 7. For both, you'll also need to add the client adapter.
