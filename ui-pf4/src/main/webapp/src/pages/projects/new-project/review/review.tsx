@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RouteComponentProps } from "react-router-dom";
+import { AxiosError } from "axios";
 
 import {
   Stack,
@@ -14,6 +15,8 @@ import {
   DescriptionListDescription,
   Button,
   ButtonVariant,
+  List,
+  ListItem,
 } from "@patternfly/react-core";
 import { css } from "@patternfly/react-styles";
 import styles from "@patternfly/react-styles/css/components/Wizard/wizard";
@@ -21,7 +24,10 @@ import styles from "@patternfly/react-styles/css/components/Wizard/wizard";
 import { useDispatch } from "react-redux";
 import { alertActions } from "store/alert";
 
+import { ConditionalRender } from "components";
 import { useFetchProject } from "hooks/useFetchProject";
+import { useFetchRules } from "hooks/useFetchRules";
+import { useFetchLabels } from "hooks/useFetchLabels";
 
 import { AdvancedOptionsFieldKey, getAlertModel } from "Constants";
 import { formatPath, Paths, ProjectRoute } from "Paths";
@@ -30,31 +36,41 @@ import {
   createProjectExecution,
   saveAnalysisContext,
 } from "api/api";
-
-import NewProjectWizard, {
-  WizardStepIds,
-  LoadingWizardContent,
-  useWizardCancelRedirect,
-} from "../wizard";
-import { AxiosError } from "axios";
 import { getAxiosErrorMessage } from "utils/modelUtils";
-import { ConditionalRender } from "components";
+import { AnalysisContext } from "models/api";
+
+import { useCancelWizard } from "../wizard/useCancelWizard";
+import {
+  NewProjectWizard,
+  NewProjectWizardStepIds,
+} from "../wizard/project-wizard";
+import { getPathFromStep } from "../wizard/wizard-utils";
+import { LoadingWizardContent } from "../wizard/loading-content";
+
+const NONE = (
+  <span className="pf-c-content">
+    <i>
+      <small>none</small>
+    </i>
+  </span>
+);
 
 const nullabeContent = (value: any) => {
-  return value ? (
-    value
-  ) : (
-    <span className="pf-c-content">
-      <i>
-        <small>none</small>
-      </i>
-    </span>
+  return value ? value : NONE;
+};
+
+const getAdvancedOptionsWithExclusion = (
+  analysisContext: AnalysisContext,
+  exclude: AdvancedOptionsFieldKey[]
+) => {
+  return analysisContext.advancedOptions.filter(
+    (f) => !exclude.some((e) => e === f.name)
   );
 };
 
 interface ReviewProps extends RouteComponentProps<ProjectRoute> {}
 
-export const Review: React.FC<ReviewProps> = ({ match, history: { push } }) => {
+export const Review: React.FC<ReviewProps> = ({ match, history }) => {
   const dispatch = useDispatch();
 
   const {
@@ -62,28 +78,31 @@ export const Review: React.FC<ReviewProps> = ({ match, history: { push } }) => {
     analysisContext,
     isFetching,
     fetchError,
-    loadProject,
+    fetchProject: loadProject,
   } = useFetchProject();
+
+  const {
+    rulesPath,
+    isFetching: isFetchingRules,
+    fetchError: fetchRulesError,
+    loadRules,
+  } = useFetchRules();
+  const {
+    labelsPath,
+    isFetching: isFetchingLabels,
+    fetchError: fetchLabelsError,
+    loadLabels,
+  } = useFetchLabels();
 
   const [isCreatingExecution, setIsCreatingExecution] = useState(false);
 
-  const redirectOnCancel = useWizardCancelRedirect();
+  const redirectOnCancel = useCancelWizard();
 
   useEffect(() => {
     loadProject(match.params.project);
-  }, [match, loadProject]);
-
-  const handleOnBackStep = () => {
-    push(
-      formatPath(Paths.newProject_advandedOptions, {
-        project: match.params.project,
-      })
-    );
-  };
-
-  const handleOnCancel = useCallback(() => {
-    redirectOnCancel(push, project);
-  }, [project, push, redirectOnCancel]);
+    loadRules(match.params.project);
+    loadLabels(match.params.project);
+  }, [match, loadProject, loadRules, loadLabels]);
 
   const handleSaveAndRun = (createExecution: boolean) => {
     setIsCreatingExecution(true);
@@ -99,13 +118,13 @@ export const Review: React.FC<ReviewProps> = ({ match, history: { push } }) => {
         })
         .then(() => {
           if (createExecution) {
-            push(
+            history.push(
               formatPath(Paths.executions, {
                 project: project.id,
               })
             );
           } else {
-            push(Paths.projects);
+            history.push(Paths.projects);
           }
         })
         .catch((error: AxiosError) => {
@@ -119,20 +138,42 @@ export const Review: React.FC<ReviewProps> = ({ match, history: { push } }) => {
     }
   };
 
+  const handleOnGoToStep = (newStep: NewProjectWizardStepIds) => {
+    history.push(
+      formatPath(getPathFromStep(newStep), {
+        project: match.params.project,
+      })
+    );
+  };
+
+  const handleOnBackStep = () => {
+    history.push(
+      formatPath(Paths.newProject_advandedOptions, {
+        project: match.params.project,
+      })
+    );
+  };
+
+  const handleOnCancel = () => redirectOnCancel(history.push);
+
+  const currentStep = NewProjectWizardStepIds.REVIEW;
+  const disableNav =
+    isFetching || isFetchingRules || isFetchingLabels || isCreatingExecution;
+  const canJumpUpto = currentStep;
+
   return (
     <NewProjectWizard
-      stepId={WizardStepIds.REVIEW}
-      enableNext={true}
-      disableNavigation={isFetching || isCreatingExecution}
-      migrationProject={project}
-      showErrorContent={fetchError}
+      disableNav={disableNav}
+      stepId={currentStep}
+      canJumpUpTo={canJumpUpto}
+      showErrorContent={fetchError || fetchRulesError || fetchLabelsError}
+      onGoToStep={handleOnGoToStep}
       footer={
         <footer className={css(styles.wizardFooter)}>
           <Button
             variant={ButtonVariant.primary}
-            type="submit"
             onClick={() => handleSaveAndRun(false)}
-            isDisabled={isFetching || isCreatingExecution}
+            isDisabled={disableNav}
           >
             Save
           </Button>
@@ -140,28 +181,31 @@ export const Review: React.FC<ReviewProps> = ({ match, history: { push } }) => {
             variant={ButtonVariant.primary}
             type="submit"
             onClick={() => handleSaveAndRun(true)}
-            isDisabled={isFetching || isCreatingExecution}
+            isDisabled={disableNav}
           >
             Save and run
           </Button>
           <Button
             variant={ButtonVariant.secondary}
             onClick={handleOnBackStep}
-            isDisabled={isFetching || isCreatingExecution}
+            isDisabled={disableNav}
           >
             Back
           </Button>
           <Button
             variant={ButtonVariant.link}
             onClick={handleOnCancel}
-            isDisabled={isFetching || isCreatingExecution}
+            isDisabled={disableNav}
           >
             Cancel
           </Button>
         </footer>
       }
     >
-      <ConditionalRender when={isFetching} then={<LoadingWizardContent />}>
+      <ConditionalRender
+        when={isFetching || isFetchingRules || isFetchingLabels}
+        then={<LoadingWizardContent />}
+      >
         <Stack hasGutter>
           <StackItem>
             <TextContent>
@@ -174,7 +218,7 @@ export const Review: React.FC<ReviewProps> = ({ match, history: { push } }) => {
               </Text>
             </TextContent>
           </StackItem>
-          {project && analysisContext && (
+          {project && analysisContext && rulesPath && labelsPath && (
             <StackItem>
               <DescriptionList isHorizontal>
                 <DescriptionListGroup>
@@ -192,11 +236,15 @@ export const Review: React.FC<ReviewProps> = ({ match, history: { push } }) => {
                 <DescriptionListGroup>
                   <DescriptionListTerm>Applications</DescriptionListTerm>
                   <DescriptionListDescription>
-                    {project.applications.length}
+                    <List>
+                      {project.applications.map((item, index) => (
+                        <ListItem key={index}>{item.inputFilename}</ListItem>
+                      ))}
+                    </List>
                   </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                  <DescriptionListTerm>Target(s)</DescriptionListTerm>
+                  <DescriptionListTerm>Target</DescriptionListTerm>
                   <DescriptionListDescription>
                     {analysisContext.advancedOptions
                       .filter((f) => f.name === AdvancedOptionsFieldKey.TARGET)
@@ -205,15 +253,95 @@ export const Review: React.FC<ReviewProps> = ({ match, history: { push } }) => {
                   </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                  <DescriptionListTerm>Source(s)</DescriptionListTerm>
+                  <DescriptionListTerm>Included packages</DescriptionListTerm>
                   <DescriptionListDescription>
-                    {nullabeContent(
-                      analysisContext.advancedOptions
-                        .filter(
-                          (f) => f.name === AdvancedOptionsFieldKey.SOURCE
-                        )
-                        .map((f) => f.value)
-                        .join(", ")
+                    {analysisContext.includePackages.length === 0 ? (
+                      "No packages defined. Default configuration will be applied."
+                    ) : (
+                      <List>
+                        {analysisContext.includePackages.map((elem, index) => (
+                          <ListItem key={index}>{elem.fullName}</ListItem>
+                        ))}
+                      </List>
+                    )}
+                  </DescriptionListDescription>
+                </DescriptionListGroup>
+                <DescriptionListGroup>
+                  <DescriptionListTerm>Custom rules</DescriptionListTerm>
+                  <DescriptionListDescription>
+                    {rulesPath.length > 0 ? (
+                      <List>
+                        {rulesPath.map((elem, index) => (
+                          <ListItem key={index}>
+                            {elem.shortPath || elem.path}{" "}
+                            {!!analysisContext.rulesPaths.find(
+                              (f) => f.id === elem.id
+                            )
+                              ? "(Enabled)"
+                              : "(Disabled)"}
+                          </ListItem>
+                        ))}
+                      </List>
+                    ) : (
+                      NONE
+                    )}
+                  </DescriptionListDescription>
+                </DescriptionListGroup>
+                <DescriptionListGroup>
+                  <DescriptionListTerm>Custom labels</DescriptionListTerm>
+                  <DescriptionListDescription>
+                    {labelsPath.length > 0 ? (
+                      <List>
+                        {labelsPath.map((elem, index) => (
+                          <ListItem key={index}>
+                            {elem.shortPath || elem.path}{" "}
+                            {!!analysisContext.labelsPaths.find(
+                              (f) => f.id === elem.id
+                            )
+                              ? "(Enabled)"
+                              : "(Disabled)"}
+                          </ListItem>
+                        ))}
+                      </List>
+                    ) : (
+                      NONE
+                    )}
+                  </DescriptionListDescription>
+                </DescriptionListGroup>
+                <DescriptionListGroup>
+                  <DescriptionListTerm>Advanced options</DescriptionListTerm>
+                  <DescriptionListDescription>
+                    {getAdvancedOptionsWithExclusion(analysisContext, [
+                      AdvancedOptionsFieldKey.TARGET,
+                    ]).length > 0 ? (
+                      <table
+                        role="grid"
+                        className="pf-c-table pf-m-grid-md pf-m-compact"
+                        aria-label="Advanced options table"
+                      >
+                        <thead>
+                          <tr role="row">
+                            <th role="columnheader" scope="col">
+                              Option
+                            </th>
+                            <th role="columnheader" scope="col">
+                              Value
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {getAdvancedOptionsWithExclusion(analysisContext, [
+                            AdvancedOptionsFieldKey.TARGET,
+                          ]).map((option, index) => (
+                            <tr key={index} role="row">
+                              <td role="cell">{option.name}</td>
+                              <td role="cell">{option.value}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      NONE
                     )}
                   </DescriptionListDescription>
                 </DescriptionListGroup>
